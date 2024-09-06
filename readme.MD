@@ -1,5 +1,10 @@
-`Instalacion y Creacion de django`
+`Instalacion y Creacion de Web en django`
 
+[Python](https://www.python.org/downloads/)
+
+----
+
+- En Poweshell (SH)
 ```sh
 pip install django
 ```
@@ -13,22 +18,27 @@ cd Reconocimiento_Facial
 python manage.py startapp usuarios
 ```
 
-- Instalar dependencias
+- Instalar dependencias necesarias para el reconocimiento
 ```sh
 pip install django opencv-python-headless tensorflow Pillow
 
 ```
 
 
+----
+- # Configuracion del Proyecto en VsCode
+----
+
 - #### Configuracion Settings.py
-`se agrego "usuarios" a INSTALLED_APPS. (reconocimiento_Facial/settings.py)`
+se agrego `"usuarios"` a `INSTALLED_APPS` *(reconocimiento_Facial/settings.py)*
+
 ```python
 INSTALLED_APPS = [
     'usuarios',
 ]
 ```
 
-
+----
 
 - Creacion de modelos: Dentro de usuarios/models.py:
 
@@ -43,25 +53,31 @@ class Usuario(models.Model):
     def __str__(self):
         return self.nombre
 ```
+----
+- Configuracion Templates
+----
 
 - #### Crear Carpeta para los templates
-En la carpeta del proyecto creamos una carpeta llamada "templates" 
-luego otra carpeta llamada igual que la aplicacion
+En la carpeta del proyecto (`"Reconocimiento_facial"`), creamos una carpeta llamada `"templates" `
+luego otra carpeta llamada igual que la aplicacion (`"usuarios"`)
 y dentro de esa carpeta agregamos los .html
 
-- #### Agregar los Templates a settings.py
+----
+
+- #### Agregar los Templates a settings.py `(reconocimiento_Facial/settings.py)`
+
 En el settings.py importamos OS
 ```python
 import os
 ```
-Y agregamos la carpeta en la parte de 'DIRS' tal cual esta en el codigo 
+Y agregamos la carpeta en la parte de `'DIRS'` tal cual esta en el codigo 
 (solo esa parte se modifica)
 
 ```python
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')] ## Esto se modifica,
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -72,97 +88,11 @@ TEMPLATES = [
 ]
 ```
 
+----
+- Creacion de Templates
+----
 
-
-## Vistas Vista de Registro Dentro de usuarios/views.py:
-
-```python 
-
-import cv2
-import numpy as np
-import base64
-from django.shortcuts import render, redirect
-from .models import Usuario
-from .forms import RegistroForm
-from tensorflow.keras.models import load_model
-from io import BytesIO
-from PIL import Image
-
-# Cargar modelo preentrenado de FaceNet
-facenet_model = load_model('ruta_al_modelo_facenet.h5')
-
-def generar_embedding(imagen):
-    imagen = cv2.resize(imagen, (160, 160))
-    imagen = np.expand_dims(imagen, axis=0)
-    embedding = facenet_model.predict(imagen)
-    return embedding
-
-def registrar_usuario(request):
-    if request.method == 'POST':
-        form = RegistroForm(request.POST, request.FILES)
-        if form.is_valid():
-            nombre = form.cleaned_data['nombre']
-            rut = form.cleaned_data['rut']
-            video_data = form.cleaned_data['video_data']
-
-            # Decodificar el video base64
-            video_decoded = base64.b64decode(video_data.split(',')[1])
-            video_path = '/tmp/temp_video.webm'  # Ruta temporal para guardar el video
-            with open(video_path, 'wb') as f:
-                f.write(video_decoded)
-
-            # Captura y procesamiento de frames desde el video
-            video_capture = cv2.VideoCapture(video_path)
-            embeddings = []
-            while True:
-                ret, frame = video_capture.read()
-                if not ret:
-                    break
-                embedding = generar_embedding(frame)
-                embeddings.append(embedding)
-            video_capture.release()
-
-            # Promedio de embeddings para mayor precisión
-            if embeddings:
-                embedding_promedio = np.mean(embeddings, axis=0).tobytes()
-
-                # Guardar usuario en la base de datos
-                usuario = Usuario(nombre=nombre, rut=rut, embedding_facial=embedding_promedio)
-                usuario.save()
-
-            return redirect('login')
-    else:
-        form = RegistroForm()
-    return render(request, 'usuarios/registro.html', {'form': form})
-
-```
-## Vista de Login Dentro de usuarios/views.py:
-
-```python
-
-def login_usuario(request):
-    if request.method == 'POST':
-        image_data = request.POST.get('image_data')
-
-        # Decodificar la imagen base64
-        image_decoded = base64.b64decode(image_data.split(',')[1])
-        image = Image.open(BytesIO(image_decoded))
-        frame = np.array(image)
-
-        # Generar embedding de la imagen
-        embedding_actual = generar_embedding(frame)
-
-        # Comparar con embeddings en la base de datos
-        for usuario in Usuario.objects.all():
-            embedding_db = np.frombuffer(usuario.embedding_facial, dtype=np.float32)
-            if np.linalg.norm(embedding_actual - embedding_db) < 0.6:  # Ajusta el umbral según sea necesario
-                return redirect('menu_principal', usuario_id=usuario.id)
-        return render(request, 'usuarios/login.html', {'error': 'Autenticación fallida'})
-    return render(request, 'usuarios/login.html')
-    
-```
-
-## Templates (Diseño de la Interfaz Utiliza Bootstrap para estilizar las páginas. \registro.html)
+- ###  \registro.html
 
 ```HTML
 
@@ -234,10 +164,9 @@ def login_usuario(request):
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>
-
-
 ```
-## Templates LOGIN.HTML
+
+- ### \LOGIN.HTML
 
 ```HTML
 
@@ -287,6 +216,102 @@ def login_usuario(request):
 </html>
 ```
 
+----
+- Creacion de Vistas
+----
+
+- ### Vistas Vista de Registro Dentro de usuarios/views.py:
+
+```python 
+
+import cv2
+import numpy as np
+import base64
+from django.shortcuts import render, redirect
+from .models import Usuario
+from .forms import RegistroForm
+from tensorflow.keras.models import load_model
+from io import BytesIO
+from PIL import Image
+
+# Cargar modelo preentrenado de FaceNet
+facenet_model = load_model('ruta_al_modelo_facenet.h5')
+
+def generar_embedding(imagen):
+    imagen = cv2.resize(imagen, (160, 160))
+    imagen = np.expand_dims(imagen, axis=0)
+    embedding = facenet_model.predict(imagen)
+    return embedding
+
+def registrar_usuario(request):
+    if request.method == 'POST':
+        form = RegistroForm(request.POST, request.FILES)
+        if form.is_valid():
+            nombre = form.cleaned_data['nombre']
+            rut = form.cleaned_data['rut']
+            video_data = form.cleaned_data['video_data']
+
+            # Decodificar el video base64
+            video_decoded = base64.b64decode(video_data.split(',')[1])
+            video_path = '/tmp/temp_video.webm'  # Ruta temporal para guardar el video
+            with open(video_path, 'wb') as f:
+                f.write(video_decoded)
+
+            # Captura y procesamiento de frames desde el video
+            video_capture = cv2.VideoCapture(video_path)
+            embeddings = []
+            while True:
+                ret, frame = video_capture.read()
+                if not ret:
+                    break
+                embedding = generar_embedding(frame)
+                embeddings.append(embedding)
+            video_capture.release()
+
+            # Promedio de embeddings para mayor precisión
+            if embeddings:
+                embedding_promedio = np.mean(embeddings, axis=0).tobytes()
+
+                # Guardar usuario en la base de datos
+                usuario = Usuario(nombre=nombre, rut=rut, embedding_facial=embedding_promedio)
+                usuario.save()
+
+            return redirect('login')
+    else:
+        form = RegistroForm()
+    return render(request, 'usuarios/registro.html', {'form': form})
+
+```
+- ### Vista de Login Dentro de usuarios/views.py:
+
+```python
+
+def login_usuario(request):
+    if request.method == 'POST':
+        image_data = request.POST.get('image_data')
+
+        # Decodificar la imagen base64
+        image_decoded = base64.b64decode(image_data.split(',')[1])
+        image = Image.open(BytesIO(image_decoded))
+        frame = np.array(image)
+
+        # Generar embedding de la imagen
+        embedding_actual = generar_embedding(frame)
+
+        # Comparar con embeddings en la base de datos
+        for usuario in Usuario.objects.all():
+            embedding_db = np.frombuffer(usuario.embedding_facial, dtype=np.float32)
+            if np.linalg.norm(embedding_actual - embedding_db) < 0.6:  # Ajusta el umbral según sea necesario
+                return redirect('menu_principal', usuario_id=usuario.id)
+        return render(request, 'usuarios/login.html', {'error': 'Autenticación fallida'})
+    return render(request, 'usuarios/login.html')
+    
+```
+
+----
+----
+
+
 - #### Migrar el modelo a sqlite
 ```sh
 python manage.py makemigrations
@@ -298,3 +323,4 @@ python manage.py migrate
 
 
 - #### Configurar los URLS.PY
+(FALTA)
