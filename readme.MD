@@ -1,6 +1,6 @@
 `Instalacion y Creacion de Web en django`
 
-[Python](https://www.python.org/downloads/)
+[Descarga Python](https://www.python.org/downloads/)
 
 ----
 
@@ -26,7 +26,7 @@ pip install django opencv-python-headless tensorflow Pillow
 
 
 ----
-- # Configuracion del Proyecto en VsCode
+- ## Configuracion del Proyecto en VsCode
 ----
 
 - #### Configuracion Settings.py
@@ -54,7 +54,7 @@ class Usuario(models.Model):
         return self.nombre
 ```
 ----
-- Configuracion Templates
+- ## Configuracion Templates
 ----
 
 - #### Crear Carpeta para los templates
@@ -89,10 +89,10 @@ TEMPLATES = [
 ```
 
 ----
-- Creacion de Templates
+- # Creacion de Templates
 ----
 
-- ###  \registro.html
+- ####  \registro.html
 
 ```HTML
 
@@ -166,7 +166,7 @@ TEMPLATES = [
 </html>
 ```
 
-- ### \LOGIN.HTML
+- #### \LOGIN.HTML
 
 ```HTML
 
@@ -217,10 +217,10 @@ TEMPLATES = [
 ```
 
 ----
-- Creacion de Vistas
+- # Creacion de Vistas
 ----
 
-- ### Vistas Vista de Registro Dentro de usuarios/views.py:
+- #### Vistas Vista de Registro Dentro de usuarios/views.py:
 
 ```python 
 
@@ -282,7 +282,7 @@ def registrar_usuario(request):
     return render(request, 'usuarios/registro.html', {'form': form})
 
 ```
-- ### Vista de Login Dentro de usuarios/views.py:
+- #### Vista de Login Dentro de usuarios/views.py:
 
 ```python
 
